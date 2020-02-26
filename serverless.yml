@@ -1,0 +1,98 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: sls
+
+custom:
+  settings:
+    POSTS_TABLE: posts
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  # Service wide environment variables
+  environment: ${self:custom.settings}
+  region: us-east-2
+  # IAM role statements so that services can be accessed in the AWS account
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+      - dynamodb:DescribeTable
+      - dynamodb:Scan
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:UpdateItem
+      - dynamodb:DeleteItem
+      Resource:
+      - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.POSTS_TABLE}"
+
+
+
+functions:
+  createPost:
+    # File and module name
+    handler: handler.createPost
+    # The Events that trigger this Function
+    events:
+      - #Create API Gateway HTTP endpoint that triggers the function
+      - http:
+          # Path for this endpoint
+          path: /post
+          method: post
+  getAllPosts:
+    handler: handler.getAllPosts
+    events:
+      - http:
+          path: /posts
+          method: get
+  getPosts:
+    handler: handler.getPosts
+    events:
+      - http:
+          path: /posts/{number}
+          method: get
+  getPost:
+    handler: handler.getPost
+    events:
+      - http:
+          path: /post/{id}
+          method: get
+  updatePost:
+    handler: handler.updatePost
+    events:
+      - http:
+          path: /post/{id}
+          method: put
+  deletePost:
+    handler: handler.deletePost
+    events:
+      - http:
+          path: /post/{id}
+          method: delete
+
+#Resources that are used by the functions
+resources:
+  Resources:
+    PostsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.POSTS_TABLE}
